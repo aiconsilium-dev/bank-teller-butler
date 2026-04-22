@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>행원 집사</title>
+  <style>
+    :root {
+      --bg: #080f1e;
+      --surface: #0d1b36;
+      --surface2: #142344;
+      --border: #1e3560;
+      --accent: #2563eb;
+      --accent-dim: #0e2147;
+      --accent-light: #3b82f6;
+      --gold: #f59e0b;
+      --text: #e2e8f0;
+      --text-dim: #7a90b0;
+      --success: #10b981;
+      --error: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+
+    /* API Key Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 90%; max-width: 420px; }
+    .modal-logo { font-size: 40px; text-align: center; margin-bottom: 12px; }
+    .modal h2 { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .modal p { font-size: 13px; color: var(--text-dim); text-align: center; line-height: 1.6; margin-bottom: 20px; }
+    .modal input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; color: var(--text); font-size: 13px; font-family: monospace; outline: none; }
+    .modal input:focus { border-color: var(--accent); }
+    .modal-btn { width: 100%; background: var(--accent); border: none; border-radius: 8px; padding: 12px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 12px; transition: opacity 0.15s; }
+    .modal-btn:hover { opacity: 0.85; }
+    .modal-note { font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 12px; line-height: 1.5; }
+
+    /* Header */
+    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+    .header-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #1e3a8a, #2563eb); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .header-title h1 { font-size: 17px; font-weight: 700; }
+    .header-title p { font-size: 11px; color: var(--text-dim); }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .reset-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; color: var(--text-dim); font-size: 11px; cursor: pointer; }
+    .reset-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+    .status-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* Main */
+    .main { flex: 1; display: flex; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar { width: 230px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 14px 10px; gap: 10px; overflow-y: auto; }
+    .sidebar h3 { font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; padding: 0 4px; }
+    .bk-chip { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px; cursor: pointer; transition: all .15s; font-size: 11px; color: var(--text-dim); border: 1px solid transparent; }
+    .bk-chip:hover { background: var(--surface2); color: var(--text); }
+    .bk-chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent-light); }
+    .bk-code { font-size: 9px; font-weight: 700; background: var(--surface2); border-radius: 4px; padding: 2px 4px; min-width: 44px; text-align: center; color: var(--text-dim); }
+    .bk-chip.active .bk-code { background: var(--accent); color: #fff; }
+    .divider { height: 1px; background: var(--border); margin: 4px 0; }
+    .qq { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--text-dim); cursor: pointer; transition: all .15s; line-height: 1.5; }
+    .qq:hover { border-color: var(--accent); color: var(--text); }
+
+    /* Chat */
+    .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .message { display: flex; gap: 10px; max-width: 820px; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.assistant { align-self: flex-start; }
+    .avatar { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+    .message.user .avatar { background: var(--accent-dim); }
+    .message.assistant .avatar { background: var(--surface2); }
+    .bubble { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; line-height: 1.75; max-width: 640px; }
+    .message.user .bubble { background: var(--accent-dim); border-color: var(--accent); }
+    .bubble strong { color: var(--accent-light); }
+    .bubble em { color: var(--gold); font-style: normal; }
+    .meta-tags { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+    .meta-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; font-size: 10px; color: var(--text-dim); }
+    .meta-tag.bk { border-color: var(--accent); color: var(--accent-light); }
+    .meta-tag.lv { border-color: var(--success); color: var(--success); }
+
+    /* Welcome */
+    .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; text-align: center; }
+    .welcome-icon { width: 72px; height: 72px; background: linear-gradient(135deg, #1e3a8a, #2563eb); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 0 30px rgba(37,99,235,.25); }
+    .welcome h2 { font-size: 20px; font-weight: 700; }
+    .welcome p { font-size: 13px; color: var(--text-dim); max-width: 460px; line-height: 1.75; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 520px; }
+    .chip { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 7px 14px; font-size: 12px; cursor: pointer; color: var(--text-dim); transition: all .15s; }
+    .chip:hover { border-color: var(--accent); color: var(--accent-light); }
+
+    /* Typing */
+    .typing-indicator { display: flex; gap: 4px; padding: 6px 2px; align-items: center; }
+    .typing-indicator span { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
+    .typing-indicator span:nth-child(2){animation-delay:.2s}
+    .typing-indicator span:nth-child(3){animation-delay:.4s}
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-7px)} }
+
+    /* Input */
+    .input-area { border-top: 1px solid var(--border); padding: 12px 18px; display: flex; gap: 10px; align-items: flex-end; background: var(--surface); }
+    .input-wrapper { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; transition: border-color .15s; display: flex; flex-direction: column; gap: 6px; }
+    .input-wrapper:focus-within { border-color: var(--accent); }
+    .ctx-row { display: flex; gap: 6px; align-items: center; }
+    .ctx-label { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+    #ctxInput { flex:1; background:none; border:none; outline:none; color:var(--text-dim); font-size:11px; font-family:inherit; }
+    #ctxInput::placeholder { color: var(--border); }
+    .input-div { height: 1px; background: var(--border); }
+    #msgInput { background:none; border:none; outline:none; color:var(--text); font-size:13px; line-height:1.5; resize:none; max-height:100px; font-family:inherit; width:100%; }
+    #msgInput::placeholder { color: var(--text-dim); }
+    .send-btn { width: 40px; height: 40px; background: var(--accent); border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; transition: all .15s; }
+    .send-btn:hover { background: var(--accent-light); }
+    .send-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    .bubble ul,.bubble ol{padding-left:18px;margin:7px 0} .bubble li{margin:4px 0} .bubble h3{color:var(--accent-light);margin:12px 0 5px;font-size:14px;border-bottom:1px solid var(--border);padding-bottom:3px} .bubble h4{color:var(--gold);margin:9px 0 4px;font-size:13px} .bubble blockquote{border-left:3px solid var(--gold);padding-left:10px;color:var(--text-dim);margin:7px 0} .bubble hr{border:none;border-top:1px solid var(--border);margin:10px 0} .bubble code{background:var(--surface2);padding:2px 5px;border-radius:4px;font-size:12px}
+    @media(max-width:768px){.sidebar{display:none}}
+  </style>
+</head>
+<body>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <div class="modal-logo">🏦</div>
+    <h2>행원 집사</h2>
+    <p>Anthropic API 키를 입력하세요.<br>브라우저 로컬에만 저장되며 외부로 전송되지 않습니다.</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api..." />
+    <button class="modal-btn" onclick="saveApiKey()">시작하기</button>
+    <p class="modal-note">API 키는 이 기기 localStorage에만 저장됩니다.</p>
+  </div>
+</div>
+
+<div class="header">
+  <div class="header-logo">🏦</div>
+  <div class="header-title">
+    <h1>행원 집사</h1>
+    <p>금융기관 현장직원 AI 법률 어시스턴트</p>
+  </div>
+  <div class="header-right">
+    <div class="status-dot" id="statusDot" style="display:none"></div>
+    <button class="reset-btn" onclick="resetApiKey()">API 키 재설정</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div>
+      <h3>업무 분류</h3>
+      <div class="bk-chip active" onclick="selectBK(this,'')">
+        <span class="bk-code">전체</span><span>모든 업무</span>
+      </div>
+      <div id="bkList"></div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <h3>자주 묻는 질문</h3>
+      <div class="qq" onclick="sendQ('근저당 설정 후 채무자 사망 시 상속인 처리 절차')">근저당 설정 후 채무자 사망 처리</div>
+      <div class="qq" onclick="sendQ('기한이익 상실 사유와 통보 절차')">기한이익 상실 통보 절차</div>
+      <div class="qq" onclick="sendQ('금리인하요구권 검토 기준과 처리 방법')">금리인하요구권 검토 기준</div>
+      <div class="qq" onclick="sendQ('소멸시효 임박 채권 시효중단 방법 체크리스트')">소멸시효 임박 — 시효중단 체크</div>
+      <div class="qq" onclick="sendQ('금감원 민원 접수 시 초기 대응 순서와 기한')">금감원 민원 초기 대응</div>
+      <div class="qq" onclick="sendQ('채권추심법 금지행위 목록')">추심 시 금지행위 목록</div>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🏦</div>
+        <h2>현장에서 바로 쓰는 법률 어시스턴트</h2>
+        <p>고객 응대 중 마주치는 법률·규제 질문에 즉시 답변합니다.<br>근거 조문, 실무 절차, 주의사항을 함께 안내합니다.</p>
+        <div class="chips">
+          <div class="chip" onclick="sendQ('근저당 말소 절차와 필요 서류')">근저당 말소 절차</div>
+          <div class="chip" onclick="sendQ('청약철회권 행사 기간과 방법')">청약철회권</div>
+          <div class="chip" onclick="sendQ('기한이익 상실 통보 방법과 주의사항')">기한이익 상실</div>
+          <div class="chip" onclick="sendQ('채권양도 통지 방법과 효력 발생 시점')">채권양도 통지</div>
+          <div class="chip" onclick="sendQ('금소법 설명의무 위반 시 제재는?')">금소법 설명의무</div>
+          <div class="chip" onclick="sendQ('연체이자율 상한 규제와 현행 기준')">연체이자율 규제</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <div class="ctx-row">
+          <span class="ctx-label">상황</span>
+          <input id="ctxInput" type="text" placeholder="예: 개인사업자 담보대출 / 연체 3개월" />
+        </div>
+        <div class="input-div"></div>
+        <textarea id="msgInput" rows="1" placeholder="업무 질문을 입력하세요..." onkeydown="handleKey(event)" oninput="resize(this)"></textarea>
+      </div>
+      <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYSTEM = `당신은 행원 집사 — 금융기관 현장직원(행원)을 위한 AI 법률 어시스턴트입니다.
+
+은행, 저축은행, 새마을금고 등 금융기관 행원이 고객 응대 및 업무 처리 중 마주치는 법률·규제 질문에 즉시 답변합니다.
+
+근거 법령 (답변 시 조문 명시 필수):
+- 은행법 / 은행업감독규정
+- 저축은행법 / 새마을금고법
+- 여신전문금융업법
+- 금융소비자보호법(금소법)
+- 채권의 공정한 추심에 관한 법률(채권추심법)
+- 민법 (소멸시효, 채권양도, 담보)
+- 이자제한법 / 대부업법
+
+답변 원칙:
+1. 실무 우선: 행원이 바로 적용할 수 있는 절차와 체크리스트 중심
+2. 법령 명시: 근거 조문 반드시 포함 (예: 금소법 제17조 제1항)
+3. 리스크 경고: 제재 가능성 있는 경우 ⚠️ 로 명확히 표시
+4. 한계 인정: 법무팀/준법감시인 확인이 필요한 사안은 그렇게 안내
+
+응답 수준:
+- L1 즉답: 표준 절차 질문, 5분 내 처리
+- L2 검토필요: 사실관계 판단 필요 → 준법감시인 검토 권고
+- L3 전문가 필수: 소송·임직원 비위·약관 분쟁 → 법무팀 필수
+
+답변 형식 (마크다운):
+### 답변 요약
+[핵심 1-2줄]
+
+### 근거 법령
+- 조문
+
+### 실무 처리 절차
+1. 단계별
+
+### ⚠️ 주의사항
+리스크 항목
+
+답변 언어: 한국어`;
+
+const BK_LIST = [
+  {code:'BK-001',name:'담보·등기'},
+  {code:'BK-002',name:'여신심사·실행'},
+  {code:'BK-003',name:'채권관리·추심'},
+  {code:'BK-004',name:'소멸시효'},
+  {code:'BK-005',name:'금소법·설명의무'},
+  {code:'BK-006',name:'금리인하요구권'},
+  {code:'BK-007',name:'기한이익상실'},
+  {code:'BK-008',name:'청약철회·해지'},
+  {code:'BK-009',name:'금감원 민원대응'},
+  {code:'BK-010',name:'불법추심 규제'},
+  {code:'BK-011',name:'내부통제·준법'},
+  {code:'BK-012',name:'임직원 횡령·배임'},
+];
+
+const BK_KW = {
+  'BK-001':['근저당','담보','등기','경매','말소','설정','저당권'],
+  'BK-002':['여신','대출','심사','실행','한도','보증'],
+  'BK-003':['채권','연체','추심','채권양도','NPL'],
+  'BK-004':['소멸시효','시효','시효중단'],
+  'BK-005':['금소법','설명의무','부당권유','적합성'],
+  'BK-006':['금리인하요구권','금리인하'],
+  'BK-007':['기한이익','기한이익상실'],
+  'BK-008':['청약철회','철회권','해지','조기상환'],
+  'BK-009':['금감원','민원','분쟁조정'],
+  'BK-010':['불법추심','추심금지','채권추심법'],
+  'BK-011':['내부통제','준법감시','이상거래'],
+  'BK-012':['횡령','배임','임직원','비위'],
+};
+
+let history = [];
+let selectedBK = '';
+let loading = false;
+
+function init() {
+  const key = localStorage.getItem('btb_api_key');
+  if (key) {
+    document.getElementById('apiModal').style.display = 'none';
+    document.getElementById('statusDot').style.display = 'block';
+  }
+  renderBKList();
+}
+
+function saveApiKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (!k.startsWith('sk-')) return alert('올바른 API 키를 입력하세요 (sk- 로 시작)');
+  localStorage.setItem('btb_api_key', k);
+  document.getElementById('apiModal').style.display = 'none';
+  document.getElementById('statusDot').style.display = 'block';
+}
+
+function resetApiKey() {
+  if (!confirm('API 키를 삭제하고 재설정하시겠습니까?')) return;
+  localStorage.removeItem('btb_api_key');
+  location.reload();
+}
+
+function renderBKList() {
+  const c = document.getElementById('bkList');
+  BK_LIST.forEach(b => {
+    const d = document.createElement('div');
+    d.className = 'bk-chip';
+    d.innerHTML = `<span class="bk-code">${b.code}</span><span>${b.name}</span>`;
+    d.onclick = () => selectBK(d, b.code);
+    c.appendChild(d);
+  });
+}
+
+function selectBK(el, code) {
+  document.querySelectorAll('.bk-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedBK = code;
+}
+
+function detectBK(text) {
+  const scores = {};
+  for (const [bk, kws] of Object.entries(BK_KW)) {
+    const s = kws.filter(k => text.includes(k)).length;
+    if (s > 0) scores[bk] = s;
+  }
+  if (!Object.keys(scores).length) return null;
+  return Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+function detectLevel(text) {
+  if (['횡령','배임','소송','형사','수사기관'].some(w=>text.includes(w))) return 'L3 전문가 필수';
+  if (['법무팀','준법감시인','검토 필요','판단'].some(w=>text.includes(w))) return 'L2 검토 권고';
+  return 'L1 즉답';
+}
+
+function resize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+function sendQ(text) {
+  document.getElementById('msgInput').value = text;
+  send();
+}
+
+function addMsg(role, content, meta=null) {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+  const msgs = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = `message ${role}`;
+  const av = role === 'user' ? '👤' : '🏦';
+  let metaHtml = '';
+  if (meta && role === 'assistant') {
+    metaHtml = `<div class="meta-tags">
+      ${meta.bk ? `<span class="meta-tag bk">${meta.bk}</span>` : ''}
+      ${meta.lv ? `<span class="meta-tag lv">${meta.lv}</span>` : ''}
+    </div>`;
+  }
+  d.innerHTML = `<div class="avatar">${av}</div><div><div class="bubble">${role==='assistant'?md(content):esc(content)}</div>${metaHtml}</div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+function addTyping() {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+  const msgs = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'message assistant'; d.id = 'typing';
+  d.innerHTML = `<div class="avatar">🏦</div><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+function esc(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function md(t) {
+  return t
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^#### (.+)$/gm,'<h4>$1</h4>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)/g,'<ul>$1</ul>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+}
+
+async function send() {
+  if (loading) return;
+  const apiKey = localStorage.getItem('btb_api_key');
+  if (!apiKey) { document.getElementById('apiModal').style.display='flex'; return; }
+
+  const msgEl = document.getElementById('msgInput');
+  const ctxEl = document.getElementById('ctxInput');
+  const msg = msgEl.value.trim();
+  if (!msg) return;
+
+  const ctx = ctxEl.value.trim();
+  const fullMsg = ctx ? `[상황: ${ctx}]\n${msg}` : msg;
+
+  msgEl.value = ''; msgEl.style.height = 'auto';
+  addMsg('user', ctx ? `${ctx}\n\n${msg}` : msg);
+  history.push({role:'user', content: fullMsg});
+
+  const typing = addTyping();
+  loading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-iua': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2048,
+        system: SYSTEM,
+        messages: history.slice(-20),
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const reply = data.content[0].text;
+    typing.remove();
+    history.push({role:'assistant', content: reply});
+
+    const bk = selectedBK || detectBK(fullMsg);
+    const lv = detectLevel(reply);
+    addMsg('assistant', reply, {bk, lv});
+
+  } catch(e) {
+    typing.remove();
+    addMsg('assistant', `❌ 오류: ${e.message}`);
+  } finally {
+    loading = false;
+    document.getElementById('sendBtn').disabled = false;
+    msgEl.focus();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
