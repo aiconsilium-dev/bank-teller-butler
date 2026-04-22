@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>행원 집사 — 금융기관 현장직원 AI 법률 어시스턴트</title>
+  <style>
+    :root {
+      --bg: #080f1e;
+      --surface: #0d1b36;
+      --surface2: #142344;
+      --border: #1e3560;
+      --accent: #2563eb;
+      --accent-dim: #0e2147;
+      --accent-light: #3b82f6;
+      --gold: #f59e0b;
+      --gold-dim: #78400a;
+      --text: #e2e8f0;
+      --text-dim: #7a90b0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 12px rgba(37,99,235,0.3);
+    }
+
+    .header-title { flex: 1; }
+
+    .header-title h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .header-title p {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 11px;
+      color: var(--accent-light);
+    }
+
+    .header-badge .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .header-law-tags {
+      display: flex;
+      gap: 6px;
+    }
+
+    .law-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    /* Main layout */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 12px;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .sidebar-section h3 {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+
+    .bk-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 12px;
+      color: var(--text-dim);
+      border: 1px solid transparent;
+    }
+
+    .bk-chip:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .bk-chip.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+
+    .bk-code {
+      font-size: 9px;
+      font-weight: 700;
+      background: var(--surface2);
+      border-radius: 4px;
+      padding: 2px 5px;
+      min-width: 46px;
+      text-align: center;
+      color: var(--text-dim);
+    }
+
+    .bk-chip.active .bk-code {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .quick-question {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      line-height: 1.5;
+    }
+
+    .quick-question:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* Chat area */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      display: flex;
+      gap: 12px;
+      max-width: 840px;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message.assistant { align-self: flex-start; }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .message.user .avatar { background: var(--accent-dim); }
+    .message.assistant .avatar { background: var(--surface2); }
+
+    .bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: 14px;
+      line-height: 1.75;
+      max-width: 660px;
+    }
+
+    .message.user .bubble {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+
+    .bubble pre {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+
+    .bubble code {
+      background: var(--surface2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .bubble strong { color: var(--accent-light); }
+    .bubble em { color: var(--gold); }
+
+    /* Law citation styling */
+    .law-cite {
+      display: inline-block;
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+      color: var(--gold);
+      margin: 0 2px;
+    }
+
+    /* Risk badge */
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--error);
+      margin: 4px 0;
+    }
+
+    .meta-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .meta-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .meta-tag.bk {
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+
+    .meta-tag.law {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .meta-tag.level {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    /* Loading */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 8px 4px;
+      align-items: center;
+    }
+
+    .typing-indicator span {
+      width: 7px;
+      height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-7px); }
+    }
+
+    /* Welcome screen */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .welcome-icon-wrap {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      box-shadow: 0 0 40px rgba(37,99,235,0.25);
+      margin-bottom: 4px;
+    }
+
+    .welcome h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .welcome p {
+      font-size: 14px;
+      color: var(--text-dim);
+      max-width: 500px;
+      line-height: 1.75;
+    }
+
+    .welcome-law-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .welcome-law-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .welcome-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      max-width: 560px;
+    }
+
+    .welcome-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-dim);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .welcome-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+
+    /* Input area */
+    .input-area {
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      background: var(--surface);
+    }
+
+    .input-wrapper {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      padding: 10px 14px;
+      gap: 6px;
+      transition: border-color 0.15s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--accent);
+    }
+
+    .input-context {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .context-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    #contextInput {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-family: inherit;
+      placeholder-color: var(--text-dim);
+    }
+
+    #contextInput::placeholder { color: var(--border); }
+
+    .input-divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    #messageInput {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      resize: none;
+      max-height: 120px;
+      font-family: inherit;
+    }
+
+    #messageInput::placeholder { color: var(--text-dim); }
+
+    .send-btn {
+      width: 42px;
+      height: 42px;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .send-btn:hover { background: var(--accent-light); }
+    .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Markdown */
+    .bubble ul, .bubble ol { padding-left: 20px; margin: 8px 0; }
+    .bubble li { margin: 5px 0; }
+    .bubble h3 { color: var(--accent-light); margin: 14px 0 6px; font-size: 15px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+    .bubble h4 { color: var(--gold); margin: 10px 0 4px; font-size: 13px; }
+    .bubble table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12px; }
+    .bubble th, .bubble td { border: 1px solid var(--border); padding: 7px 10px; }
+    .bubble th { background: var(--surface2); color: var(--text-dim); }
+    .bubble blockquote { border-left: 3px solid var(--gold); padding-left: 12px; color: var(--text-dim); margin: 8px 0; font-style: italic; }
+    .bubble hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .header-law-tags { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">🏦</div>
+  <div class="header-title">
+    <h1>행원 집사</h1>
+    <p>금융기관 현장직원 AI 법률 어시스턴트</p>
+  </div>
+  <div class="header-law-tags">
+    <span class="law-tag">은행법</span>
+    <span class="law-tag">금소법</span>
+    <span class="law-tag">채권추심법</span>
+    <span class="law-tag">여신전문금융업법</span>
+  </div>
+  <div class="header-badge">
+    <span class="dot"></span>
+    법령 기준 최신화
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>업무 분류</h3>
+      <div class="bk-chip active" data-bk="" onclick="selectBK(this, '')">
+        <span class="bk-code">전체</span>
+        <span>모든 업무</span>
+      </div>
+      <div id="bkList"></div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <h3>자주 묻는 질문</h3>
+      <div class="quick-question" onclick="sendQuick('근저당 설정 후 채무자가 사망한 경우 상속인 처리 절차')">
+        근저당 설정 후 채무자 사망 — 상속인 처리
+      </div>
+      <div class="quick-question" onclick="sendQuick('여신거래 기한이익 상실 사유와 통보 절차')">
+        기한이익 상실 사유·통보 절차
+      </div>
+      <div class="quick-question" onclick="sendQuick('고객이 금리인하요구권을 행사했을 때 검토 기준과 처리 방법')">
+        금리인하요구권 검토 기준
+      </div>
+      <div class="quick-question" onclick="sendQuick('소멸시효 임박 채권 시효중단 방법 체크리스트')">
+        소멸시효 임박 — 시효중단 체크리스트
+      </div>
+      <div class="quick-question" onclick="sendQuick('금감원 민원이 접수됐을 때 초기 대응 순서와 기한')">
+        금감원 민원 접수 — 초기 대응 순서
+      </div>
+      <div class="quick-question" onclick="sendQuick('연체채권 추심 시 채권추심법 금지행위 목록')">
+        추심 시 금지행위 목록
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon-wrap">🏦</div>
+        <h2>현장에서 바로 쓰는 법률 어시스턴트</h2>
+        <p>고객 응대 중 마주치는 법률·규제 질문에 즉시 답변합니다.<br>근거 조문, 실무 절차, 주의사항을 함께 안내합니다.</p>
+        <div class="welcome-law-list">
+          <span class="welcome-law-item">🏛 은행법·저축은행법</span>
+          <span class="welcome-law-item">🛡 금융소비자보호법</span>
+          <span class="welcome-law-item">⚖️ 채권추심법</span>
+          <span class="welcome-law-item">💳 여신전문금융업법</span>
+          <span class="welcome-law-item">🏘 새마을금고법</span>
+        </div>
+        <div class="welcome-chips">
+          <div class="welcome-chip" onclick="sendQuick('근저당 말소 절차와 필요 서류 안내')">근저당 말소 절차</div>
+          <div class="welcome-chip" onclick="sendQuick('청약철회권 행사 기간과 방법은?')">청약철회권</div>
+          <div class="welcome-chip" onclick="sendQuick('기한이익 상실 통보 방법과 주의사항')">기한이익 상실</div>
+          <div class="welcome-chip" onclick="sendQuick('채권양도 통지 방법과 효력 발생 시점')">채권양도 통지</div>
+          <div class="welcome-chip" onclick="sendQuick('금융소비자보호법 설명의무 위반 시 제재는?')">금소법 설명의무</div>
+          <div class="welcome-chip" onclick="sendQuick('연체이자율 상한 규제와 현행 기준')">연체이자율 규제</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <div class="input-context">
+          <span class="context-label">상황</span>
+          <input
+            id="contextInput"
+            type="text"
+            placeholder="예: 개인사업자 담보대출 / 연체 3개월 / 근저당 설정 건"
+          />
+        </div>
+        <div class="input-divider"></div>
+        <textarea
+          id="messageInput"
+          rows="1"
+          placeholder="업무 질문을 입력하세요..."
+          onkeydown="handleKeydown(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+      </div>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="전송">
+        ➤
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+let conversationHistory = [];
+let selectedBK = '';
+let isLoading = false;
+
+const BK_LIST = [
+  { code: 'BK-001', name: '담보·등기' },
+  { code: 'BK-002', name: '여신심사·실행' },
+  { code: 'BK-003', name: '채권관리·추심' },
+  { code: 'BK-004', name: '소멸시효' },
+  { code: 'BK-005', name: '금소법·설명의무' },
+  { code: 'BK-006', name: '금리인하요구권' },
+  { code: 'BK-007', name: '기한이익상실' },
+  { code: 'BK-008', name: '청약철회·해지' },
+  { code: 'BK-009', name: '금감원 민원대응' },
+  { code: 'BK-010', name: '불법추심 규제' },
+  { code: 'BK-011', name: '내부통제·준법' },
+  { code: 'BK-012', name: '임직원 횡령·배임' },
+];
+
+function renderBKList() {
+  const container = document.getElementById('bkList');
+  BK_LIST.forEach(bk => {
+    const div = document.createElement('div');
+    div.className = 'bk-chip';
+    div.dataset.bk = bk.code;
+    div.innerHTML = `<span class="bk-code">${bk.code}</span><span>${bk.name}</span>`;
+    div.onclick = () => selectBK(div, bk.code);
+    container.appendChild(div);
+  });
+}
+
+function selectBK(el, code) {
+  document.querySelectorAll('.bk-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedBK = code;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function sendQuick(text) {
+  document.getElementById('messageInput').value = text;
+  sendMessage();
+}
+
+function addMessage(role, content, meta = null) {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+
+  const avatar = role === 'user' ? '👤' : '🏦';
+  let metaHtml = '';
+
+  if (meta && role === 'assistant') {
+    const bkTag = meta.detected_bk
+      ? `<span class="meta-tag bk">${meta.detected_bk}</span>` : '';
+    const levelTag = meta.response_level
+      ? `<span class="meta-tag level">${meta.response_level}</span>` : '';
+    const lawTag = meta.law_refs
+      ? `<span class="meta-tag law">📜 ${meta.law_refs}</span>` : '';
+    metaHtml = `<div class="meta-tags">${bkTag}${levelTag}${lawTag}</div>`;
+  }
+
+  const formattedContent = role === 'assistant' ? markdownToHtml(content) : escapeHtml(content);
+
+  div.innerHTML = `
+    <div class="avatar">${avatar}</div>
+    <div>
+      <div class="bubble">${formattedContent}</div>
+      ${metaHtml}
+    </div>
+  `;
+
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function addTypingIndicator() {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message assistant';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="avatar">🏦</div>
+    <div class="bubble">
+      <div class="typing-indicator"><span></span><span></span><span></span></div>
+    </div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+}
+
+function markdownToHtml(text) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+    .replace(/(<li>.*?<\/li>(\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+async function sendMessage() {
+  if (isLoading) return;
+
+  const input = document.getElementById('messageInput');
+  const contextInput = document.getElementById('contextInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const context = contextInput.value.trim();
+  const fullMessage = context ? `[상황: ${context}]\n${msg}` : msg;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  addMessage('user', context ? `${context}\n\n${msg}` : msg);
+  conversationHistory.push({ role: 'user', content: fullMessage });
+
+  const typingEl = addTypingIndicator();
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: fullMessage,
+        history: conversationHistory.slice(-20),
+        bk_filter: selectedBK || null,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || '서버 오류');
+    }
+
+    const data = await res.json();
+    typingEl.remove();
+
+    conversationHistory.push({ role: 'assistant', content: data.reply });
+    addMessage('assistant', data.reply, {
+      detected_bk: data.detected_bk,
+      response_level: data.response_level,
+      law_refs: data.law_refs,
+    });
+
+  } catch (e) {
+    typingEl.remove();
+    addMessage('assistant', `❌ 오류: ${e.message}`);
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+renderBKList();
+</script>
+</body>
+</html>
